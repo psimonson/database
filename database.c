@@ -79,13 +79,13 @@ void db_append(void)
 	struct DatabaseData *tmp;
 	size_t i;
 	
-	db.size += MAXDB;
-	tmp = (struct DatabaseData *)realloc(db.data, sizeof(struct DatabaseData) * db.size);
+	tmp = (struct DatabaseData *)realloc(db.data, sizeof(struct DatabaseData) * (db.size+MAXDB));
 	if(tmp == NULL) {
 		db.err = 4;
 		db.msg = "Append failed";
 		return;
 	}
+	db.size += MAXDB;
 
 	db.data = tmp;
 	i = db.count * MAXDB;
@@ -103,7 +103,8 @@ void db_append(void)
  */
 void db_load(const char *name)
 {
-	size_t count;
+	size_t total;
+	size_t i;
 	FILE *fp;
 
 	fp = fopen(name, "rb");
@@ -114,56 +115,64 @@ void db_load(const char *name)
 	}
 	db.fd = fileno(fp);
 
-	count = fread(&db.size, sizeof(size_t), 1, fp);
-	if(count != 1) {
+	total = fread(&db.size, sizeof(size_t), 1, fp);
+	if(total != 1) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	count = fread(&db.count, sizeof(size_t), 1, fp);
-	if(count != 1) {
+	total = fread(&db.count, sizeof(size_t), 1, fp);
+	if(total != 1) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	count = fread(db.stat1, sizeof(char), sizeof(db.stat1), fp);
-	if(count != sizeof(db.stat1)) {
+	total = fread(db.stat1, sizeof(char), sizeof(db.stat1), fp);
+	if(total != sizeof(db.stat1)) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	count = fread(db.stat2, sizeof(char), sizeof(db.stat2), fp);
-	if(count != sizeof(db.stat2)) {
+	total = fread(db.stat2, sizeof(char), sizeof(db.stat2), fp);
+	if(total != sizeof(db.stat2)) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	count = fread(db.stat3, sizeof(char), sizeof(db.stat3), fp);
-	if(count != sizeof(db.stat3)) {
+	total = fread(db.stat3, sizeof(char), sizeof(db.stat3), fp);
+	if(total != sizeof(db.stat3)) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	printf("Database Count: %lu\n", db.count);
-	count = 0;
-	while(count < db.count) {
+	i = 0;
+	while(i < db.count) {
 		db_append();
-		fread(db.data, sizeof(struct DatabaseData), MAXDB, fp);
-		++count;
+		++i;
+	}
+
+	printf("Database Count: %lu\n", i);
+
+	i = 0;
+	total = 0;
+	while(i < db.count) {
+		db_append();
+		total += fread(db.data, sizeof(struct DatabaseData), MAXDB, fp);
+		++i;
 	}
 	fclose(fp);
 
-	if(count != db.count) {
+	if(i != db.count || total != db.size) {
 		db.err = 3;
 		db.msg = "Load failed (unaligned database)";
 		printf("Got here!\n");
@@ -174,7 +183,8 @@ void db_load(const char *name)
  */
 void db_save(const char *name)
 {
-	size_t count;
+	size_t total;
+	size_t i;
 	FILE *fp;
 
 	fp = fopen(name, "wb");
@@ -185,54 +195,55 @@ void db_save(const char *name)
 	}
 	db.fd = fileno(fp);
 
-	count = fwrite(&db.size, sizeof(size_t), 1, fp);
-	if(count != 1) {
+	total = fwrite(&db.size, sizeof(size_t), 1, fp);
+	if(total != 1) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	count = fwrite(&db.count, sizeof(size_t), 1, fp);
-	if(count != 1) {
+	total = fwrite(&db.count, sizeof(size_t), 1, fp);
+	if(total != 1) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	count = fwrite(db.stat1, sizeof(char), sizeof(db.stat1), fp);
-	if(count != sizeof(db.stat1)) {
+	total = fwrite(db.stat1, sizeof(char), sizeof(db.stat1), fp);
+	if(total != sizeof(db.stat1)) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	count = fwrite(db.stat2, sizeof(char), sizeof(db.stat2), fp);
-	if(count != sizeof(db.stat2)) {
+	total = fwrite(db.stat2, sizeof(char), sizeof(db.stat2), fp);
+	if(total != sizeof(db.stat2)) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	count = fwrite(db.stat3, sizeof(char), sizeof(db.stat3), fp);
-	if(count != sizeof(db.stat3)) {
+	total = fwrite(db.stat3, sizeof(char), sizeof(db.stat3), fp);
+	if(total != sizeof(db.stat3)) {
 		fclose(fp);
 		db.err = 3;
 		db.msg = "Load failed (database header invalid)";
 		return;
 	}
 
-	count = 0;
-	while(count < db.count) {
-		fwrite(db.data, sizeof(struct DatabaseData), MAXDB, fp);
-		++count;
+	i = 0;
+	total = 0;
+	while(i < db.count) {
+		total += fwrite(db.data, sizeof(struct DatabaseData), MAXDB, fp);
+		++i;
 	}
 	fclose(fp);
 
-	if(count != db.count) {
+	if(i != db.count || total != db.size) {
 		db.err = 3;
 		db.msg = "Save failed (unaligned database)";
 		return;
