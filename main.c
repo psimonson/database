@@ -49,7 +49,7 @@ int main()
 				}
 				id = db_getcur();
 
-				if(id < 0 || id >= db->data[db->count*(MAXDB-1)].id) {
+				if(id < 0 || id >= db->data[db->count*(MAXDB-1)]->id) {
 					printf("Invalid ID number.\n");
 					break;
 				}
@@ -73,15 +73,15 @@ int main()
 					break;
 				}
 
-				longest = (int)strlen(db->data[i].name);
-				for(i = 0; i < db->data[db->count*(MAXDB-1)].id; ++i) {
-					if((int)strlen(db->data[i].name) > longest) {
-						longest = (int)strlen(db->data[i].name);
+				longest = (int)strlen(db->data[i]->name);
+				for(i = 0; i < db->data[db->count*(MAXDB-1)]->id; ++i) {
+					if((int)strlen(db->data[i]->name) > longest) {
+						longest = (int)strlen(db->data[i]->name);
 					}
 				}
 
 				printf("%-15s %-*s %-15s\n", "ID", longest, "NAME", "STATUS");
-				for(i = 0; i < db->data[db->count*(MAXDB-1)].id; ++i) {
+				for(i = 0; i < db->data[db->count*(MAXDB-1)]->id; ++i) {
 					db_print(longest, i);
 				}
 				break;
