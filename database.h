@@ -25,7 +25,7 @@ struct Database {
 	size_t count;
 	size_t size;
 	char *msg;
-	struct DatabaseData **data;
+	unsigned char *data;
 };
 
 typedef struct Database Database;

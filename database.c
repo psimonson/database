@@ -70,65 +70,42 @@ void db_init(void)
  */
 void db_free(void)
 {
-	long int i;
-
-	for(i = 0; i < db.size; ++i) {
-		if(db.data[i] != NULL) {
-			free(db.data[i]);
-		}
-	}
 	free(db.data);
+	db_init();
 }
 /* Add another section of database.
  */
 void db_append(void)
 {
-	struct DatabaseData **tmp;
-	size_t cur;
+	unsigned char *tmp;
 	size_t i;
 	
-	tmp = (struct DatabaseData **)realloc(db.data, sizeof(struct DatabaseData *) * (db.size+MAXDB));
+	tmp = (unsigned char *)realloc(db.data, sizeof(struct DatabaseData) * (db.size+MAXDB));
 	if(tmp == NULL) {
 		db.err = 4;
 		db.msg = "Append failed";
 		return;
 	}
 	db.data = tmp;
-	i = cur = db.count * MAXDB;
+	i = db.count * MAXDB;
 	db.size += MAXDB;
-
-	while(i < db.size) {
-		db.data[i] = (struct DatabaseData *)calloc(1, sizeof(struct DatabaseData));
-		if(db.data[i] == NULL) {
-			while(--i != 0) {
-				free(db.data[i]);
-			}
-			free(db.data);
-			db.data = NULL;
-			db.err = 4;
-			db.msg = "Append failed";
-			return;
-		}
-		++i;
-	}
-
-	i = cur;
-	while(i < db.size) {
-		db.data[i]->id = i;
-		db.data[i]->name[0] = '\0';
-		db.data[i]->stat[0] = '\0';
-		++i;
-	}
-
 	++db.count;
+
+	while(i < (db.count * MAXDB)) {
+		((struct DatabaseData *)db.data)[i].id = i;
+		((struct DatabaseData *)db.data)[i].name[0] = '\0';
+		((struct DatabaseData *)db.data)[i].stat[0] = '\0';
+		++i;
+	}
 }
 /* Load a database from disk.
  */
 void db_load(const char *name)
 {
 	size_t total;
-	size_t i;
 	FILE *fp;
+
+	db_free();
 
 	fp = fopen(name, "rb");
 	if(fp == NULL) {
@@ -185,24 +162,19 @@ void db_load(const char *name)
 		return;
 	}
 
-	i = 0;
-	while(i < db.count) {
-		db_append();
-		++i;
+	db.data = (unsigned char *)malloc(sizeof(struct DatabaseData)*(db.count * MAXDB));
+	if(db.data == NULL) {
+		db.err = 3;
+		db.msg = "Load failed (out of memory)";
+		return;
 	}
 
-	i = 0;
-	total = 0;
-	while(i < db.size) {
-		total += fread(db.data[i], sizeof(struct DatabaseData), 1, fp);
-		++i;
-	}
+	total = fread(db.data, sizeof(struct DatabaseData), db.count * MAXDB, fp);
 	fclose(fp);
 
 	if(total != db.size) {
 		db.err = 3;
 		db.msg = "Load failed (unaligned database)";
-		printf("Got here!\n");
 		return;
 	}
 }
@@ -211,7 +183,6 @@ void db_load(const char *name)
 void db_save(const char *name)
 {
 	size_t total;
-	size_t i;
 	FILE *fp;
 
 	fp = fopen(name, "wb");
@@ -269,12 +240,7 @@ void db_save(const char *name)
 		return;
 	}
 
-	i = 0;
-	total = 0;
-	while(i < db.size) {
-		total += fwrite(db.data[i], sizeof(struct DatabaseData), 1, fp);
-		++i;
-	}
+	total = fwrite(db.data, sizeof(struct DatabaseData), db.count * MAXDB, fp);
 	fclose(fp);
 
 	if(total != db.size) {
@@ -315,7 +281,7 @@ void db_print(int longest, int id)
 	for(i = 0; i < db.size && i != id; ++i);
 
 	if(i == id) {
-		printf("%-15d %-*s %-15s\n", db.data[i]->id, longest+10, db.data[i]->name, db.data[i]->stat);
+		printf("%-15d %-*s %-15s\n", ((struct DatabaseData *)db.data)[i].id, longest+10, ((struct DatabaseData *)db.data)[i].name, ((struct DatabaseData *)db.data)[i].stat);
 		return;
 	}
 	
@@ -339,7 +305,7 @@ void db_replace(int id)
 		if(strncmp(tmp, "", 1) == 0) {
 			printf("You need to enter something.\n");
 		}
-		strncpy(db.data[i]->name, tmp, sizeof(db.data[i]->name));
+		strncpy(((struct DatabaseData *)db.data)[i].name, tmp, sizeof(((struct DatabaseData *)db.data)[i].name));
 
 		printf("Status options available:\n1) ALIVE\n2) MISSING\n3) DEAD\n");
 		(void)getstr(&tmp, "Enter status: ");
@@ -349,13 +315,13 @@ void db_replace(int id)
 
 		switch(atoi(tmp)) {
 			case 1:
-				strncpy(db.data[i]->stat, db.stat1, sizeof(db.data[i]->stat));
+				strncpy(((struct DatabaseData *)db.data)[i].stat, db.stat1, sizeof(((struct DatabaseData *)db.data)[i].stat));
 				break;
 			case 2:
-				strncpy(db.data[i]->stat, db.stat2, sizeof(db.data[i]->stat));
+				strncpy(((struct DatabaseData *)db.data)[i].stat, db.stat2, sizeof(((struct DatabaseData *)db.data)[i].stat));
 				break;
 			case 3:
-				strncpy(db.data[i]->stat, db.stat3, sizeof(db.data[i]->stat));
+				strncpy(((struct DatabaseData *)db.data)[i].stat, db.stat3, sizeof(((struct DatabaseData *)db.data)[i].stat));
 				break;
 			default:
 				printf("Not an option.\n");
