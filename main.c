@@ -18,7 +18,7 @@ int main()
 	short int c;
 
 	db_init();
-	printf("List of available commands:\na: Append\nr: Replace\np: Print\nl: Load\ns: Save\nn: New\nq: Quit\nEnter command: ");
+	printf("List of available commands:\na: Append\ni: Insert\nr: Replace\np: Print\nl: Load\ns: Save\nn: New\nq: Quit\nEnter command: ");
 	do {
 		c = getc(stdin);
 		getc(stdin);
@@ -36,10 +36,9 @@ int main()
 				}
 			}
 			break;
-			case 'r':
+			case 'i':
 			{
 				Database *db;
-				//char *tmp;
 				int id;
 
 				db = db_get();
@@ -53,7 +52,38 @@ int main()
 					printf("Invalid ID number.\n");
 					break;
 				}
+
 				db_replace(id);
+
+				if(!db_geterrori()) {
+					printf("You replaced ID number %d!\n", id);
+					++id;
+					db_setcur(id);
+				}
+			}
+			break;
+			case 'r':
+			{
+				Database *db;
+				char *tmp;
+				int id;
+
+				db = db_get();
+				if(db->data == NULL) {
+					printf("No database entries.\n");
+					break;
+				}
+
+				(void)getstr(&tmp, "Enter ID: ");
+				id = atoi(tmp);
+
+				if(id < 0 || id >= ((struct DatabaseData *)db->data)[db->count*(MAXDB-1)].id) {
+					printf("Invalid ID number.\n");
+					break;
+				}
+
+				db_replace(id);
+
 				if(!db_geterrori()) {
 					printf("You replaced ID number %d!\n", id);
 					++id;
@@ -115,7 +145,6 @@ int main()
 			case 'n':
 			{
 				db_free();
-				db_init();
 				printf("New database created!\n");
 			}
 			break;
@@ -123,7 +152,7 @@ int main()
 			break;
 		}
 
-		printf("List of available commands:\na: Append\nr: Replace\np: Print\nl: Load\ns: Save\nn: New\nq: Quit\nEnter command: ");
+		printf("List of available commands:\na: Append\ni: Insert\nr: Replace\np: Print\nl: Load\ns: Save\nn: New\nq: Quit\nEnter command: ");
 	} while(1);
 
 	db_free();

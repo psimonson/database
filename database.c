@@ -119,7 +119,7 @@ void db_load(const char *name)
 	if(total != 1) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Load failed (database size)";
 		return;
 	}
 
@@ -127,14 +127,22 @@ void db_load(const char *name)
 	if(total != 1) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Load failed (database count)";
+		return;
+	}
+
+	total = fread(&db.cur, sizeof(int), 1, fp);
+	if(total != 1) {
+		fclose(fp);
+		db.err = 3;
+		db.msg = "Load failed (database cur)";
 		return;
 	}
 
 	if(db.size != (db.count * MAXDB)) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Load failed (database size mismatch)";
 		return;
 	}
 
@@ -142,7 +150,7 @@ void db_load(const char *name)
 	if(total != sizeof(db.stat1)) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Load failed (database stat1)";
 		return;
 	}
 
@@ -150,7 +158,7 @@ void db_load(const char *name)
 	if(total != sizeof(db.stat2)) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Load failed (database stat2)";
 		return;
 	}
 
@@ -158,7 +166,7 @@ void db_load(const char *name)
 	if(total != sizeof(db.stat3)) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Load failed (database stat3)";
 		return;
 	}
 
@@ -197,7 +205,7 @@ void db_save(const char *name)
 	if(total != 1) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Save failed (database size)";
 		return;
 	}
 
@@ -205,14 +213,22 @@ void db_save(const char *name)
 	if(total != 1) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Save failed (database count)";
+		return;
+	}
+
+	total = fwrite(&db.cur, sizeof(int), 1, fp);
+	if(total != 1) {
+		fclose(fp);
+		db.err = 3;
+		db.msg = "Save failed (database cur)";
 		return;
 	}
 
 	if(db.size != (db.count * MAXDB)) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Save failed (database size mismatch)";
 		return;
 	}
 
@@ -220,7 +236,7 @@ void db_save(const char *name)
 	if(total != sizeof(db.stat1)) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Save failed (database stat1)";
 		return;
 	}
 
@@ -228,7 +244,7 @@ void db_save(const char *name)
 	if(total != sizeof(db.stat2)) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Save failed (database stat2)";
 		return;
 	}
 
@@ -236,7 +252,7 @@ void db_save(const char *name)
 	if(total != sizeof(db.stat3)) {
 		fclose(fp);
 		db.err = 3;
-		db.msg = "Load failed (database header invalid)";
+		db.msg = "Save failed (database stat3)";
 		return;
 	}
 
