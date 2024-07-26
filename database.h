@@ -6,7 +6,7 @@
  *
  */
 
-#define MAXBUF 256
+#define MAXBUF 2048
 #define MAXDB 32
 
 struct DatabaseData {

@@ -11,8 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include "prs/network.h"
-#include "prs/readln.h"
 #include "database.h"
 #include "netprintf.h"
 
@@ -274,8 +274,8 @@ void db_print(SOCKET s, int longest, int id)
  */
 void db_replace(SOCKET s, int id)
 {
-	size_t linecap;
-	char *tmp;
+	long int nbytes;
+	char tmp[MAXBUF];
 	size_t i;
 
 	if(id < 0 || id >= db.size) {
@@ -286,15 +286,31 @@ void db_replace(SOCKET s, int id)
 
 	if(i == id) {
 		socket_printf(s, "Enter name: ");
-		(void)readln(&tmp, &linecap, s);
+		nbytes = recv(s, tmp, MAXBUF-1, s);
+		if(nbytes < 0) {
+			return;
+		}
+		tmp[nbytes] = '\0';
+		while(tmp[nbytes-1] == '\r' || tmp[nbytes-1] == '\n') {
+			--nbytes;
+		}
+		tmp[nbytes] = '\0';
 		if(strncmp(tmp, "", 1) == 0) {
 			socket_printf(s, "You need to enter something.\r\n");
 		}
+		strstr(tmp, "\r\n")[0] = '\0';
 		strncpy(((struct DatabaseData *)db.data)[i].name, tmp, sizeof(((struct DatabaseData *)db.data)[i].name));
-		free(tmp);
 
 		socket_printf(s, "Status options available:\r\n1) ALIVE\r\n2) MISSING\r\n3) DEAD\r\nEnter name: ");
-		(void)readln(&tmp, &linecap, s);
+		nbytes = recv(s, tmp, MAXBUF-1, s);
+		if(nbytes < 0) {
+			return;
+		}
+		tmp[nbytes] = '\0';
+		while(tmp[nbytes-1] == '\r' || tmp[nbytes-1] == '\n') {
+			--nbytes;
+		}
+		tmp[nbytes] = '\0';
 		if(strncmp(tmp, "", 1) == 0) {
 			socket_printf(s, "You need to enter something.\r\n");
 		}
@@ -313,7 +329,6 @@ void db_replace(SOCKET s, int id)
 				socket_printf(s, "Not an option.\r\n");
 		}
 
-		free(tmp);
 		return;
 	}
 	

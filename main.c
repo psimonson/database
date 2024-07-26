@@ -9,8 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include "prs/network.h"
-#include "prs/readln.h"
 #include "database.h"
 #include "netprintf.h"
 
@@ -19,7 +19,8 @@
 int main()
 {
 	short unsigned int port = 8888;
-	size_t linecap;
+	long int nbytes;
+	char tmp[MAXBUF];
 	SOCKET s, c;
 	short int ch;
 
@@ -40,10 +41,12 @@ int main()
 	db_init();
 	socket_printf(c, "List of available commands:\r\na: Append\r\ni: Insert\r\nr: Replace\r\np: Print\r\nl: Load\r\ns: Save\r\nn: New\r\nq: Quit\r\nEnter command: ");
 	do {
-		char *line;
-
-		(void)readln(&line, &linecap, c);
-		ch = line[0];
+		nbytes = recv(c, tmp, MAXBUF-1, c);
+		if(nbytes < 0) {
+			continue;
+		}
+		tmp[nbytes] = '\0';
+		ch = tmp[0];
 
 		if(ch == 'q' || ch == 'Q') {
 			break;
@@ -87,7 +90,6 @@ int main()
 			case 'r':
 			{
 				Database *db;
-				char *tmp;
 				int id;
 
 				db = db_get();
@@ -97,9 +99,16 @@ int main()
 				}
 
 				socket_printf(c, "Enter ID: ");
-				(void)readln(&tmp, &linecap, c);
+				nbytes = recv(c, tmp, MAXBUF-1, 0);
+				if(nbytes < 0) {
+					continue;
+				}
+				tmp[nbytes] = '\0';
+				while(tmp[nbytes-1] == '\r' || tmp[nbytes-1] == '\n') {
+					--nbytes;
+				}
+				tmp[nbytes] = '\0';
 				id = atoi(tmp);
-				free(tmp);
 
 				if(id < 0 || id >= ((struct DatabaseData *)db->data)[db->count*(MAXDB-1)].id) {
 					socket_printf(c, "Invalid ID number.\r\n");
@@ -142,32 +151,44 @@ int main()
 			}
 			case 's':
 			{
-				char *tmp;
-
 				socket_printf(c, "Enter filename: ");
-				(void)readln(&tmp, &linecap, c);
-				if(tmp == NULL) {
+				nbytes = recv(c, tmp, MAXBUF-1, 0);
+				if(nbytes < 0) {
+					break;
+				}
+				tmp[nbytes] = '\0';
+				while(tmp[nbytes-1] == '\r' || tmp[nbytes-1] == '\n') {
+					--nbytes;
+				}
+				tmp[nbytes] = '\0';
+				if(strlen(tmp) == 0) {
 					printf("Nothing entered as input.\n");
 					break;
 				}
+				socket_printf(c, "Loading file: %s\r\n", tmp);
 				db_save(tmp);
-				printf("db: %s!\n", db_geterror());
-				free(tmp);
+				socket_printf(c, "db: %s!\r\n", db_geterror());
 				break;
 			}
 			case 'l':
 			{
-				char *tmp;
-
 				socket_printf(c, "Enter filename: ");
-				(void)readln(&tmp, &linecap, c);
-				if(tmp == NULL) {
+				nbytes = recv(c, tmp, MAXBUF-1, 0);
+				if(nbytes < 0) {
+					break;
+				}
+				tmp[nbytes] = '\0';
+				while(tmp[nbytes-1] == '\r' || tmp[nbytes-1] == '\n') {
+					--nbytes;
+				}
+				tmp[nbytes] = '\0';
+				if(strlen(tmp) == 0) {
 					socket_printf(c, "Nothing entered as input.\r\n");
 					break;
 				}
+				socket_printf(c, "Loading file: %s\r\n", tmp);
 				db_load(tmp);
 				socket_printf(c, "db: %s!\n", db_geterror());
-				free(tmp);
 				break;
 			}
 			case 'n':
