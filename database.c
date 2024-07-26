@@ -251,6 +251,30 @@ int db_search(int id)
 	
 	return -1;
 }
+/* Write HTML table page for database.
+ */
+void db_writeHTML(SOCKET s, const char *name)
+{
+	size_t i;
+	FILE *fp;
+
+	fp = fopen(name, "wt");
+	if(fp == NULL) {
+		socket_printf(s, "Cannot open '%s' for writing...\r\n", name);
+		return;
+	}
+
+	fprintf(fp, "<html>\n\t<head><title>Person Status Report</title></head>\n\n\t<body bgcolor=\"#000000\" text=\"#00FF00\">\n\t\t<center>\n\t\t<p><h3>Person Status Report</h3></p>\n\n\t\t<table border=2pt>\n\t\t\t<tr>\n\t\t\t\t<th>ID</th>\n\t\t\t\t<th>NAME</th>\n\t\t\t\t<th>STATUS</th>\n\t\t\t</tr>");
+
+	for(i = 0; i < db.size; ++i) {
+		fprintf(fp, "\n\t\t\t<tr>\n\t\t\t\t<td>%d</td>\n\t\t\t\t<td>%s</td>\n\t\t\t\t<td>%s</td>\n\t\t\t</tr>", ((struct DatabaseData *)db.data)[i].id, ((struct DatabaseData *)db.data)[i].name, ((struct DatabaseData *)db.data)[i].stat);
+	}
+
+	fprintf(fp, "\n\t\t</table>\n\t\t</center>\n\t</body>\n</html>\n");
+	fclose(fp);
+
+	socket_printf(s, "File '%s' written.\r\n", name);
+}
 /* Print a database entry.
  */
 void db_print(SOCKET s, int longest, int id)

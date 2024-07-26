@@ -39,6 +39,7 @@ void db_load(const char *name);
 void db_save(const char *name);
 void db_crypt(void);
 int db_search(int id);
+void db_writeHTML(SOCKET s, const char *name);
 void db_print(SOCKET s, int longest, int id);
 void db_replace(SOCKET s, int id);
 int db_geterrori(void);

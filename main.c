@@ -39,7 +39,7 @@ int main()
 	}
 
 	db_init();
-	socket_printf(c, "List of available commands:\r\na: Append\r\ni: Insert\r\nr: Replace\r\np: Print\r\nl: Load\r\ns: Save\r\nn: New\r\nq: Quit\r\nEnter command: ");
+	socket_printf(c, "List of available commands:\r\na: Append\r\ni: Insert\r\nr: Replace\r\np: Print\r\nl: Load\r\ns: Save\r\nn: New\r\nw: Write HTML\r\nq: Quit\r\nEnter command: ");
 	do {
 		nbytes = recv(c, tmp, MAXBUF-1, c);
 		if(nbytes < 0) {
@@ -170,6 +170,26 @@ int main()
 				socket_printf(c, "db: %s!\r\n", db_geterror());
 				break;
 			}
+			case 'w':
+			{
+				socket_printf(c, "Enter filename: ");
+				nbytes = recv(c, tmp, MAXBUF-1, 0);
+				if(nbytes < 0) {
+					break;
+				}
+				tmp[nbytes] = '\0';
+				while(tmp[nbytes-1] == '\r' || tmp[nbytes-1] == '\n') {
+					--nbytes;
+				}
+				tmp[nbytes] = '\0';
+				if(strlen(tmp) == 0) {
+					socket_printf(c, "Nothing entered as input.\r\n");
+					break;
+				}
+				socket_printf(c, "Writing database to HTML table...\r\n");
+				db_writeHTML(c, tmp);
+				break;
+			}
 			case 'l':
 			{
 				socket_printf(c, "Enter filename: ");
@@ -201,7 +221,7 @@ int main()
 			break;
 		}
 
-		socket_printf(c, "List of available commands:\r\na: Append\r\ni: Insert\r\nr: Replace\r\np: Print\r\nl: Load\r\ns: Save\r\nn: New\r\nq: Quit\r\nEnter command: ");
+		socket_printf(c, "List of available commands:\r\na: Append\r\ni: Insert\r\nr: Replace\r\np: Print\r\nl: Load\r\ns: Save\r\nn: New\r\nw: Write HTML\r\nq: Quit\r\nEnter command: ");
 	} while(1);
 
 	socket_close(c);
