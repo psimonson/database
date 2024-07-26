@@ -1,13 +1,13 @@
 CC = gcc
 CFLAGS = -std=c11 -Wall -Werror -Wno-unused-function -Wno-unused-parameter -g -O0
-LDFLAGS = 
+LDFLAGS = -lprs
 
 DESTDIR ?= 
 PREFIX ?= /usr
 
 TARGET0 = dbmaker
 OBJECT0 = $(SOURCE0:%.c=%.c.o)
-SOURCE0 = main.c database.c
+SOURCE0 = main.c database.c netprintf.c
 
 all: $(TARGET0)
 

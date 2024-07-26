@@ -11,46 +11,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "prs/network.h"
+#include "prs/readln.h"
 #include "database.h"
+#include "netprintf.h"
 
 static Database db;
 
-/* Get a string from the user, standard input.
- */
-size_t getstr(char **buffer, const char *prompt)
-{
-	static char input[MAXBUF];
-	size_t i;
-
-	input[0] = '\0';
-
-	if(prompt != NULL) {
-		printf("%s", prompt);
-	}
-
-	i = 0;
-	while(i < (MAXBUF - 1)) {
-		short int c = getc(stdin);
-
-		if(c == '\n' || c == EOF) {
-			break;
-		}
-		else if(c == '\b' && i > 0) {
-			i -= 2;
-		}
-		else {
-			input[i] = c;
-		}
-		++i;
-	}
-	input[i] = '\0';
-
-	if(buffer != NULL) {
-		*buffer = &input[0];
-	}
-
-	return i;
-}
 /* Initialise database with zero data.
  */
 void db_init(void)
@@ -286,7 +253,7 @@ int db_search(int id)
 }
 /* Print a database entry.
  */
-void db_print(int longest, int id)
+void db_print(SOCKET s, int longest, int id)
 {
 	size_t i;
 
@@ -297,16 +264,17 @@ void db_print(int longest, int id)
 	for(i = 0; i < db.size && i != id; ++i);
 
 	if(i == id) {
-		printf("%-15d %-*s %-15s\n", ((struct DatabaseData *)db.data)[i].id, longest+10, ((struct DatabaseData *)db.data)[i].name, ((struct DatabaseData *)db.data)[i].stat);
+		socket_printf(s, "%-15d %-*s %-15s\r\n", ((struct DatabaseData *)db.data)[i].id, longest+10, ((struct DatabaseData *)db.data)[i].name, ((struct DatabaseData *)db.data)[i].stat);
 		return;
 	}
 	
-	printf("ID not found in database.\n");
+	socket_printf(s, "ID not found in database.\r\n");
 }
 /* Replace a database entry using passed ID value.
  */
-void db_replace(int id)
+void db_replace(SOCKET s, int id)
 {
+	size_t linecap;
 	char *tmp;
 	size_t i;
 
@@ -317,16 +285,18 @@ void db_replace(int id)
 	for(i = 0; i < db.size && i != id; ++i);
 
 	if(i == id) {
-		(void)getstr(&tmp, "Enter name: ");
+		socket_printf(s, "Enter name: ");
+		(void)readln(&tmp, &linecap, s);
 		if(strncmp(tmp, "", 1) == 0) {
-			printf("You need to enter something.\n");
+			socket_printf(s, "You need to enter something.\r\n");
 		}
 		strncpy(((struct DatabaseData *)db.data)[i].name, tmp, sizeof(((struct DatabaseData *)db.data)[i].name));
+		free(tmp);
 
-		printf("Status options available:\n1) ALIVE\n2) MISSING\n3) DEAD\n");
-		(void)getstr(&tmp, "Enter status: ");
+		socket_printf(s, "Status options available:\r\n1) ALIVE\r\n2) MISSING\r\n3) DEAD\r\nEnter name: ");
+		(void)readln(&tmp, &linecap, s);
 		if(strncmp(tmp, "", 1) == 0) {
-			printf("You need to enter something.\n");
+			socket_printf(s, "You need to enter something.\r\n");
 		}
 
 		switch(atoi(tmp)) {
@@ -340,12 +310,14 @@ void db_replace(int id)
 				strncpy(((struct DatabaseData *)db.data)[i].stat, db.stat3, sizeof(((struct DatabaseData *)db.data)[i].stat));
 				break;
 			default:
-				printf("Not an option.\n");
+				socket_printf(s, "Not an option.\r\n");
 		}
+
+		free(tmp);
 		return;
 	}
 	
-	printf("ID not found in database.\n");
+	socket_printf(s, "ID not found in database.\r\n");
 }
 /* Get the error code from the database.
  */
