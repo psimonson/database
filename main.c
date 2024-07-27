@@ -18,7 +18,7 @@ int main()
 	short int c;
 
 	db_init();
-	printf("List of available commands:\na: Append\ni: Insert\nr: Replace\np: Print\nl: Load\ns: Save\nn: New\nq: Quit\nEnter command: ");
+	printf("List of available commands:\na: Append\ni: Insert\nr: Replace\np: Print\nl: Load\ns: Save\nn: New\nw: Write\nq: Quit\nEnter command: ");
 	do {
 		c = getc(stdin);
 		getc(stdin);
@@ -125,6 +125,7 @@ int main()
 					printf("Nothing entered as input.\n");
 					break;
 				}
+				printf("Saving file: %s\n", tmp);
 				db_save(tmp);
 				printf("db: %s!\n", db_geterror());
 				break;
@@ -138,7 +139,22 @@ int main()
 					printf("Nothing entered as input.\n");
 					break;
 				}
+				printf("Loading file: %s\n", tmp);
 				db_load(tmp);
+				printf("db: %s!\n", db_geterror());
+				break;
+			}
+			case 'w':
+			{
+				char *tmp;
+
+				(void)getstr(&tmp, "Enter filename: ");
+				if(strlen(tmp) == 0) {
+					printf("Nothing entered as input.\n");
+					break;
+				}
+				printf("Saving file: %s\n", tmp);
+				db_writeHTML(tmp);
 				printf("db: %s!\n", db_geterror());
 				break;
 			}
@@ -152,7 +168,7 @@ int main()
 			break;
 		}
 
-		printf("List of available commands:\na: Append\ni: Insert\nr: Replace\np: Print\nl: Load\ns: Save\nn: New\nq: Quit\nEnter command: ");
+		printf("List of available commands:\na: Append\ni: Insert\nr: Replace\np: Print\nl: Load\ns: Save\nn: New\nw: Write\nq: Quit\nEnter command: ");
 	} while(1);
 
 	db_free();

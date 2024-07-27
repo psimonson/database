@@ -284,6 +284,33 @@ int db_search(int id)
 	
 	return -1;
 }
+/* Write an HTML table page for database.
+ */
+void db_writeHTML(const char *name)
+{
+	size_t i;
+	FILE *fp;
+
+	fp = fopen(name, "wt");
+	if(fp == NULL) {
+		printf("Failed to open '%s' for writing.\n", name);
+		db.err = 3;
+		db.msg = "Saving failed!";
+		return;
+	}
+
+	fprintf(fp, "<html>\n\t<head><title>Person Status Report</title></head>\n\n\t<body bgcolor=\"#000000\" text=\"#00FF00\">\n\t\t<center>\n\n\t\t<p><h3>Person Status Report</h3></p>\n\n\t\t<table border=2pt cell-padding=2pt cell-spacing=2pt>\n\t\t\t<tr>\n\t\t\t\t<th>ID</th>\n\t\t\t\t<th>NAME</th>\n\t\t\t\t<th>STATUS</th>\n\t\t\t</tr>");
+
+	for(i = 0; i < db.size; ++i) {
+		fprintf(fp, "\n\n\t\t\t<tr>\n\t\t\t\t<td>%d</td>\n\t\t\t\t<td>%s</td>\n\t\t\t\t<td>%s</td>\n\t\t\t</tr>", ((struct DatabaseData *)db.data)[i].id, ((struct DatabaseData *)db.data)[i].name, ((struct DatabaseData *)db.data)[i].stat);
+	}
+
+	fprintf(fp, "\n\t\t</table>\n\t</body>\n</html>\n");
+	fclose(fp);
+
+	db.err = 0;
+	db.msg = "OK";
+}
 /* Print a database entry.
  */
 void db_print(int longest, int id)
